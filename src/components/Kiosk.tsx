@@ -18,18 +18,21 @@ const REFRESH_MS = 5 * 60 * 1000;
 // The customer-facing iPad screen. Look-and-feel comes from the admin
 // settings (fetched on load, every 5 minutes, and each time the screen goes
 // back to standby); the prize is always decided by the server.
-export function Kiosk() {
+export function Kiosk({ preview = false }: { preview?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<DrawSettings>(DEFAULT_SETTINGS);
   const [available, setAvailable] = useState(true);
   const settingsRef = useRef(settings);
   const availableRef = useRef(true);
+  // Admin "test mode": settings and the next prize arrive by postMessage; nothing is fetched, no stock is touched, nothing is recorded.
+  const previewRef = useRef<{ prize: { name: string; tier: string; color: string } | null; soldOut: boolean }>({ prize: null, soldOut: false });
 
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
 
   const refreshConfig = useCallback(async () => {
+    if (preview) return;
     try {
       const res = await fetch("/api/config", { cache: "no-store" });
       if (!res.ok) return;
@@ -41,7 +44,7 @@ export function Kiosk() {
     } catch {
       // offline: keep showing what we have
     }
-  }, []);
+  }, [preview]);
 
   useEffect(() => {
     document.documentElement.classList.add("kiosk-page");
@@ -49,16 +52,33 @@ export function Kiosk() {
   }, []);
 
   useEffect(() => {
+    if (!preview) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.data?.type !== "ld-preview") return;
+      settingsRef.current = e.data.settings;
+      setSettings(e.data.settings);
+      previewRef.current = { prize: e.data.prize ?? null, soldOut: !!e.data.soldOut };
+      availableRef.current = !e.data.soldOut;
+      setAvailable(!e.data.soldOut);
+    };
+    window.addEventListener("message", onMessage);
+    window.parent.postMessage({ type: "ld-preview-ready" }, window.location.origin);
+    return () => window.removeEventListener("message", onMessage);
+  }, [preview]);
+
+  useEffect(() => {
+    if (preview) return;
     const first = setTimeout(refreshConfig, 0);
     const timer = setInterval(refreshConfig, REFRESH_MS);
     return () => {
       clearTimeout(first);
       clearInterval(timer);
     };
-  }, [refreshConfig]);
+  }, [refreshConfig, preview]);
 
   // Keep the iPad awake while the page is open (quietly does nothing where unsupported).
   useEffect(() => {
+    if (preview) return;
     type WakeLockSentinelLike = { release: () => Promise<void> };
     let lock: WakeLockSentinelLike | null = null;
     const nav = navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<WakeLockSentinelLike> } };
@@ -75,7 +95,7 @@ export function Kiosk() {
       document.removeEventListener("visibilitychange", acquire);
       lock?.release().catch(() => {});
     };
-  }, []);
+  }, [preview]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -83,6 +103,12 @@ export function Kiosk() {
     let engine: Engine | null = null;
 
     async function requestPrize(): Promise<PrizeResult> {
+      if (preview) {
+        await new Promise((r) => setTimeout(r, 300));
+        const p = previewRef.current;
+        if (p.soldOut) return { kind: "sold_out" };
+        return { kind: "prize", prize: p.prize ?? { name: "Sample Prize", tier: "LUCKY GIFT", color: "#E4E6EC" } };
+      }
       const token = engine!.newToken();
       // Same token on every retry: the server returns the same result and takes stock once.
       for (let attempt = 0; attempt < 3; attempt++) {
@@ -113,7 +139,7 @@ export function Kiosk() {
       },
     }) as Engine;
     return () => engine?.destroy();
-  }, [refreshConfig]);
+  }, [refreshConfig, preview]);
 
   const style = themeVars(settings) as CSSProperties;
 
