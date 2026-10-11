@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ColorField } from "@/components/ColorField";
@@ -33,6 +34,8 @@ export default function PrizesPage() {
   const [error, setError] = useState("");
   const [restock, setRestock] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [lowOnly, setLowOnly] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -54,6 +57,7 @@ export default function PrizesPage() {
   }, [load]);
 
   const odds = probabilities(prizes);
+  const shown = prizes.filter((p) => p.name.toLowerCase().includes(search.trim().toLowerCase()) && (!lowOnly || (p.stock !== null && p.stock <= threshold)));
   const anyLive = prizes.some(isLive);
 
   async function saveDraft() {
@@ -109,9 +113,14 @@ export default function PrizesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900">Prizes</h1>
-        <button onClick={() => setDraft(blank((prizes.at(-1)?.sortOrder ?? 0) + 1))} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-          + Add prize
-        </button>
+        <div className="flex gap-2">
+          <Link href="/admin/prizes/import" className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+            Import from file
+          </Link>
+          <button onClick={() => setDraft(blank((prizes.at(-1)?.sortOrder ?? 0) + 1))} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+            + Add prize
+          </button>
+        </div>
       </div>
 
       {!anyLive && prizes.length > 0 && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">No prize can be won right now — customers will see the sold-out message.</p>}
@@ -165,6 +174,16 @@ export default function PrizesPage() {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-3">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search prizes…" className="w-64 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" />
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" checked={lowOnly} onChange={(e) => setLowOnly(e.target.checked)} /> Low / out of stock only
+        </label>
+        <span className="text-sm text-slate-500">
+          {shown.length} of {prizes.length} prizes
+        </span>
+      </div>
+
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full min-w-[860px] text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
@@ -187,7 +206,7 @@ export default function PrizesPage() {
                 </td>
               </tr>
             )}
-            {prizes.map((p) => {
+            {shown.map((p) => {
               const st = stats.get(p.id);
               const low = p.stock !== null && p.stock <= threshold;
               const chance = odds.get(p.id) ?? 0;
