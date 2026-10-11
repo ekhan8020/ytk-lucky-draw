@@ -36,6 +36,8 @@ export default function PrizesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [lowOnly, setLowOnly] = useState(false);
+  const [bulkTier, setBulkTier] = useState("");
+  const [bulkValue, setBulkValue] = useState("");
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -59,6 +61,7 @@ export default function PrizesPage() {
   const odds = probabilities(prizes);
   const shown = prizes.filter((p) => p.name.toLowerCase().includes(search.trim().toLowerCase()) && (!lowOnly || (p.stock !== null && p.stock <= threshold)));
   const anyLive = prizes.some(isLive);
+  const tiers = Array.from(new Set(prizes.map((p) => p.tierLabel).filter(Boolean)));
 
   async function saveDraft() {
     if (!draft) return;
@@ -83,6 +86,22 @@ export default function PrizesPage() {
     if (err) return setError(err.message);
     setDraft(null);
     load();
+  }
+
+  async function setWeight(ids: string[], weight: number) {
+    const { error: err } = await createClient().from("draw_prizes").update({ weight }).in("id", ids);
+    if (err) setError(err.message);
+    else setError("");
+    load();
+  }
+
+  async function bulkWeight() {
+    const w = Math.floor(Number(bulkValue));
+    if (!bulkTier || !Number.isFinite(w) || w < 0) return setError("Pick a tier tag and enter a weight (0 or more).");
+    const ids = prizes.filter((p) => p.tierLabel === bulkTier).map((p) => p.id);
+    if (!confirm(`Set the weight of all ${ids.length} "${bulkTier}" prizes to ${w}?`)) return;
+    await setWeight(ids, w);
+    setBulkValue("");
   }
 
   async function toggleActive(p: Prize) {
@@ -184,6 +203,25 @@ export default function PrizesPage() {
         </span>
       </div>
 
+      {tiers.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
+          <span className="font-medium">Set weight for a whole tier:</span>
+          <select value={bulkTier} onChange={(e) => setBulkTier(e.target.value)} className="rounded-lg border border-slate-300 px-2 py-1.5">
+            <option value="">Tier tag…</option>
+            {tiers.map((t) => (
+              <option key={t} value={t}>
+                {t} ({prizes.filter((p) => p.tierLabel === t).length})
+              </option>
+            ))}
+          </select>
+          <span>to</span>
+          <input type="number" min={0} value={bulkValue} onChange={(e) => setBulkValue(e.target.value)} placeholder="weight" className="w-20 rounded-lg border border-slate-300 px-2 py-1.5" />
+          <button onClick={bulkWeight} className="rounded-lg bg-slate-900 px-3 py-1.5 text-white">
+            Apply
+          </button>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full min-w-[860px] text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
@@ -230,7 +268,22 @@ export default function PrizesPage() {
                   <td className="px-3 py-2">
                     {st?.today ?? 0} / {st?.total ?? 0}
                   </td>
-                  <td className="px-3 py-2">{p.weight}</td>
+                  <td className="px-3 py-2">
+                    <input
+                      key={`${p.id}-${p.weight}`}
+                      type="number"
+                      min={0}
+                      defaultValue={p.weight}
+                      onBlur={(e) => {
+                        const v = Math.floor(Number(e.target.value));
+                        if (Number.isFinite(v) && v >= 0 && v !== p.weight) setWeight([p.id], v);
+                        else e.target.value = String(p.weight);
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+                      className="w-16 rounded border border-slate-300 px-1.5 py-0.5 text-sm"
+                      aria-label="Weight"
+                    />
+                  </td>
                   <td className="px-3 py-2">{(chance * 100).toFixed(1)}%</td>
                   <td className="px-3 py-2">
                     {p.stock === null ? (
