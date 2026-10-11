@@ -20,3 +20,32 @@ export function ColorField({ label, value, onChange }: { label: string; value: s
     </label>
   );
 }
+
+// A colour that can be left on "Auto" (worked out from the main colours).
+export function OptionalColorField({
+  label,
+  value,
+  fallback,
+  onChange,
+}: {
+  label: string;
+  value: string | null;
+  // what Auto currently looks like, shown while Auto is on
+  fallback: string;
+  onChange: (v: string | null) => void;
+}) {
+  const auto = value === null;
+  return (
+    <div className="flex items-center justify-between gap-3 text-sm text-slate-700">
+      <span>{label}</span>
+      <span className="flex items-center gap-3">
+        <label className="flex items-center gap-1.5 text-xs text-slate-500">
+          <input type="checkbox" checked={auto} onChange={(e) => onChange(e.target.checked ? null : fallback)} /> Auto
+        </label>
+        <span className={auto ? "pointer-events-none opacity-40" : ""}>
+          <ColorField label="" value={value ?? fallback} onChange={onChange} />
+        </span>
+      </span>
+    </div>
+  );
+}

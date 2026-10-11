@@ -17,7 +17,11 @@ export interface DrawSettings {
   bgColor3: string | null;
   bgAngle: number;
   boxColor: string;
+  // Detail colours of the box; null = worked out automatically from the main colours.
+  boxSideColor: string | null;
+  lidColor: string | null;
   ribbonColor: string;
+  ribbonAccentColor: string | null;
   soundEnabled: boolean;
   choirEnabled: boolean;
   choirAudioUrl: string | null;
@@ -41,7 +45,10 @@ export const DEFAULT_SETTINGS: DrawSettings = {
   bgColor3: null,
   bgAngle: 180,
   boxColor: "#F5C242",
+  boxSideColor: null,
+  lidColor: null,
   ribbonColor: "#E14B4B",
+  ribbonAccentColor: null,
   soundEnabled: true,
   choirEnabled: true,
   choirAudioUrl: null,
@@ -65,7 +72,10 @@ export interface DrawSettingsRow {
   bg_color_3: string | null;
   bg_angle: number;
   box_color: string;
+  box_side_color?: string | null;
+  lid_color?: string | null;
   ribbon_color: string;
+  ribbon_accent_color?: string | null;
   sound_enabled: boolean;
   choir_enabled: boolean;
   choir_audio_url: string | null;
@@ -90,7 +100,10 @@ export function settingsFromRow(r: DrawSettingsRow): DrawSettings {
     bgColor3: r.bg_color_3,
     bgAngle: r.bg_angle,
     boxColor: r.box_color,
+    boxSideColor: r.box_side_color || null,
+    lidColor: r.lid_color || null,
     ribbonColor: r.ribbon_color,
+    ribbonAccentColor: r.ribbon_accent_color || null,
     soundEnabled: r.sound_enabled,
     choirEnabled: r.choir_enabled,
     choirAudioUrl: r.choir_audio_url,
@@ -116,7 +129,10 @@ export function settingsToRow(s: DrawSettings): DrawSettingsRow {
     bg_color_3: s.bgColor3,
     bg_angle: s.bgAngle,
     box_color: s.boxColor,
+    box_side_color: s.boxSideColor,
+    lid_color: s.lidColor,
     ribbon_color: s.ribbonColor,
+    ribbon_accent_color: s.ribbonAccentColor,
     sound_enabled: s.soundEnabled,
     choir_enabled: s.choirEnabled,
     choir_audio_url: s.choirAudioUrl,
@@ -129,6 +145,9 @@ export function settingsToRow(s: DrawSettings): DrawSettingsRow {
 export function themeVars(s: DrawSettings): Record<string, string> {
   const box = s.boxColor;
   const rib = s.ribbonColor;
+  const side = s.boxSideColor ?? shade(box, -0.22);
+  const lid = s.lidColor ?? shade(box, 0.32);
+  const acc = s.ribbonAccentColor ?? shade(rib, 0.5);
   const stops = [s.bgColor1, s.bgColor2, s.bgColor3].filter(Boolean) as string[];
   const gradient =
     stops.length === 1 ? stops[0] : `linear-gradient(${s.bgAngle}deg, ${stops.map((c, i) => `${c} ${Math.round((i / (stops.length - 1)) * (i === stops.length - 1 ? 100 : 75))}%`).join(", ")})`;
@@ -152,22 +171,28 @@ export function themeVars(s: DrawSettings): Record<string, string> {
     "--title2": s.titleLine2Color,
     "--title2-deep": shade(s.titleLine2Color, -0.3),
     "--title2-rgb": rgbTriplet(s.titleLine2Color),
-    // box artwork
-    "--box-a": shade(box, -0.06),
-    "--box-b": shade(box, 0.38),
-    "--box-c": shade(box, -0.12),
-    "--lid-a": shade(box, 0.55),
-    "--lid-b": shade(box, -0.02),
-    "--box-shadow-edge": shade(box, -0.22),
-    "--box-rim": shade(box, 0.75),
-    "--rib-a": shade(rib, -0.25),
-    "--rib-b": rib,
-    "--rib-c": shade(rib, -0.35),
-    "--rib-stroke": shade(rib, -0.38),
+    // box artwork (isometric cube, lid, satin ribbon, bow)
+    "--face-l": box,
+    "--face-l-hi": shade(box, 0.3),
+    "--face-r": side,
+    "--face-r-hi": shade(side, 0.18),
+    "--lid-top": lid,
+    "--lid-top-hi": shade(lid, 0.4),
+    "--lid-l": shade(box, 0.14),
+    "--lid-l-lo": box,
+    "--lid-r": shade(side, 0.16),
+    "--lid-r-lo": side,
+    "--edge-hi": shade(box, 0.85),
+    "--box-shadow-edge": shade(side, -0.45),
+    "--rib": rib,
     "--rib-hi": shade(rib, 0.4),
+    "--rib-lo": shade(rib, -0.28),
+    "--acc": acc,
     "--inner-a": shade(box, 0.9),
     "--inner-b": shade(box, 0.4),
     "--inner-c": shade(rib, 0.35),
+    "--inner-wall-l": shade(box, -0.5),
+    "--inner-wall-r": shade(side, -0.55),
     "--desc": s.descriptionColor,
     "--btn": s.buttonColor,
     "--btn-light": shade(s.buttonColor, 0.4),

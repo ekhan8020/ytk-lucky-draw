@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ColorField } from "@/components/ColorField";
+import { ColorField, OptionalColorField } from "@/components/ColorField";
+import { shade } from "@/lib/color";
 import { isHex } from "@/lib/color";
 import { DEFAULT_SETTINGS, DrawSettings, DrawSettingsRow, settingsFromRow, settingsToRow } from "@/lib/settings";
 import { Prize, PrizeRow, prizeFromRow } from "@/lib/prizes";
@@ -12,6 +13,9 @@ const DEVICES = [
   { id: "ipad-p", label: "iPad portrait", w: 768, h: 1024 },
   { id: "ipad-l", label: "iPad landscape", w: 1024, h: 768 },
 ] as const;
+
+const PRESET_GOLD = { boxColor: "#F5C242", boxSideColor: null, lidColor: null, ribbonColor: "#E14B4B", ribbonAccentColor: null };
+const PRESET_PINK = { boxColor: "#FFF4F6", boxSideColor: "#F0D2DA", lidColor: "#FCE4EA", ribbonColor: "#FF8FA3", ribbonAccentColor: "#BDA9F2" };
 
 const inputCls = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm";
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -72,7 +76,7 @@ export default function SettingsPage() {
   if (!form) return <p className="text-sm text-slate-500">Loading…</p>;
   const set = <K extends keyof DrawSettings>(k: K, v: DrawSettings[K]) => setForm({ ...form, [k]: v });
 
-  const colorsOk = [form.titleLine1Color, form.titleLine2Color, form.descriptionColor, form.buttonColor, form.buttonTextColor, form.bgColor1, form.bgColor2, form.boxColor, form.ribbonColor, ...(form.bgColor3 ? [form.bgColor3] : [])].every(isHex);
+  const colorsOk = [...[form.boxSideColor, form.lidColor, form.ribbonAccentColor].filter((c): c is string => c !== null), form.titleLine1Color, form.titleLine2Color, form.descriptionColor, form.buttonColor, form.buttonTextColor, form.bgColor1, form.bgColor2, form.boxColor, form.ribbonColor, ...(form.bgColor3 ? [form.bgColor3] : [])].every(isHex);
   const dirty = JSON.stringify(form) !== JSON.stringify(saved);
 
   async function save() {
@@ -144,11 +148,26 @@ export default function SettingsPage() {
             <span>Gradient angle ({form.bgAngle}°)</span>
             <input type="range" min={0} max={360} value={form.bgAngle} onChange={(e) => set("bgAngle", Number(e.target.value))} className="w-48" />
           </label>
-          <ColorField label="Gift box colour" value={form.boxColor} onChange={(v) => set("boxColor", v)} />
-          <ColorField label="Ribbon / bow colour" value={form.ribbonColor} onChange={(v) => set("ribbonColor", v)} />
-          <ColorField label="Button colour" value={form.buttonColor} onChange={(v) => set("buttonColor", v)} />
-          <ColorField label="Button text colour" value={form.buttonTextColor} onChange={(v) => set("buttonTextColor", v)} />
-          <p className="text-xs text-slate-500">Highlights, shadows and the glow of the gift box are worked out from the box and ribbon colours automatically. The button has its own colours.</p>
+          <div className="rounded-xl border border-slate-200 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Gift box</p>
+            <div className="flex flex-col gap-2.5">
+              <div className="mb-1 flex flex-wrap gap-2">
+                <span className="text-xs text-slate-500">Quick looks:</span>
+                <button type="button" className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-50" onClick={() => setForm({ ...form, ...PRESET_GOLD })}>
+                  YTK gold &amp; red
+                </button>
+                <button type="button" className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-50" onClick={() => setForm({ ...form, ...PRESET_PINK })}>
+                  Pastel pink
+                </button>
+              </div>
+              <ColorField label="Box — lit side (front left)" value={form.boxColor} onChange={(v) => set("boxColor", v)} />
+              <OptionalColorField label="Box — shaded side (front right)" value={form.boxSideColor} fallback={isHex(form.boxColor) ? shade(form.boxColor, -0.22).toUpperCase() : "#C0A030"} onChange={(v) => set("boxSideColor", v)} />
+              <OptionalColorField label="Lid — top" value={form.lidColor} fallback={isHex(form.boxColor) ? shade(form.boxColor, 0.32).toUpperCase() : "#F8E090"} onChange={(v) => set("lidColor", v)} />
+              <ColorField label="Ribbon" value={form.ribbonColor} onChange={(v) => set("ribbonColor", v)} />
+              <OptionalColorField label="Ribbon accent (bow tips & tails)" value={form.ribbonAccentColor} fallback={isHex(form.ribbonColor) ? shade(form.ribbonColor, 0.5).toUpperCase() : "#F0A0A0"} onChange={(v) => set("ribbonAccentColor", v)} />
+            </div>
+          </div>
+          <p className="text-xs text-slate-500">&ldquo;Auto&rdquo; works the colour out from the main colours. Highlights, shadows and the glow are always worked out for you.</p>
           <button
             type="button"
             className="self-start rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
