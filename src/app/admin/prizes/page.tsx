@@ -122,6 +122,16 @@ export default function PrizesPage() {
     load();
   }
 
+  async function deleteAll() {
+    const typed = prompt(`This DELETES ALL ${prizes.length} prizes. Past draw records keep the prize names.\nIt cannot be undone.\n\nType DELETE ALL to continue:`);
+    if (typed !== "DELETE ALL") return;
+    const { error: err } = await createClient().from("draw_prizes").delete().not("id", "is", null);
+    if (err) return setError(err.message);
+    setError("");
+    setNotice("All prizes deleted. You can import a new list now.");
+    load();
+  }
+
   async function toggleActive(p: Prize) {
     const { error: err } = await createClient().from("draw_prizes").update({ active: !p.active }).eq("id", p.id);
     if (err) setError(err.message);
@@ -166,11 +176,16 @@ export default function PrizesPage() {
       {allowReset && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3">
           <p className="text-sm text-red-800">
-            <b>Test tools:</b> put back the stock of everything that was won and delete all draw records, so you can test again from the original stock.
+            <b>Test tools:</b> <i>Reset test draws</i> puts back the stock of everything that was won and deletes all draw records, so you can test again from the original stock. <i>Delete all prizes</i> empties the prize list.
           </p>
-          <button onClick={resetTest} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">
-            Reset test draws
-          </button>
+          <div className="flex gap-2">
+            <button onClick={resetTest} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">
+              Reset test draws
+            </button>
+            <button onClick={deleteAll} disabled={prizes.length === 0} className="rounded-lg border border-red-600 bg-white px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-40">
+              Delete all prizes
+            </button>
+          </div>
         </div>
       )}
 
@@ -258,7 +273,7 @@ export default function PrizesPage() {
               <th className="px-3 py-2">On</th>
               <th className="px-3 py-2">Prize</th>
               <th className="px-3 py-2">Stock left</th>
-              <th className="px-3 py-2">Won (today / all)</th>
+              <th className="px-3 py-2">Won / total stock</th>
               <th className="px-3 py-2">Weight</th>
               <th className="px-3 py-2">Real chance now</th>
               <th className="px-3 py-2">Restock</th>
@@ -295,7 +310,8 @@ export default function PrizesPage() {
                     {low && p.stock !== null && <span className="ml-1 text-xs">{p.stock === 0 ? "(out)" : "(low)"}</span>}
                   </td>
                   <td className="px-3 py-2">
-                    {st?.today ?? 0} / {st?.total ?? 0}
+                    <b>{st?.total ?? 0}</b> / {p.stock === null ? "∞" : p.stock + (st?.total ?? 0)}
+                    {(st?.today ?? 0) > 0 && <span className="ml-2 text-xs text-slate-500">today {st?.today}</span>}
                   </td>
                   <td className="px-3 py-2">
                     <input
