@@ -163,3 +163,11 @@ html.kiosk-page body{
 @media (prefers-reduced-motion:reduce){.kiosk .stage:not(.busy) svg,.kiosk .cta,.kiosk .rays.on,.kiosk .burst{animation:none}}
 .kiosk .soldout{font-size:clamp(16px,3vw,22px);text-align:center;max-width:32ch;color:var(--paper)}
 .kiosk{position:fixed;inset:0;height:100%;width:100%;overflow:hidden}
+/* iPad / desktop: a wider prize card so long product names don't wrap into a tall column. Phones are unchanged. */
+@media (min-width:700px) and (min-height:521px){
+  .kiosk .card{width:min(88vw,780px);padding:38px 44px 34px}
+  .kiosk .card h2{font-size:clamp(30px,4vw,44px)}
+  .kiosk .card h2.long{font-size:clamp(24px,3vw,32px)}
+  .kiosk .card h2.xlong{font-size:clamp(20px,2.4vw,27px)}
+  .kiosk .cashier{font-size:17px}
+}

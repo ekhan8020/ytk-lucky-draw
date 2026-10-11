@@ -360,12 +360,15 @@ export function createKioskEngine(root, api) {
       chip.hidden = !p.tier; chip.textContent = p.tier; chip.style.background = p.color; chip.style.color = readableOn(p.color);
       congrats.hidden = false; hint.hidden = false; hint.textContent = cfg.popupHint;
       name.textContent = p.name;
+      name.className = p.name.length > 80 ? "xlong" : p.name.length > 45 ? "long" : "";
     } else if (r.kind === "sold_out") {
       chip.hidden = true; congrats.hidden = true; hint.hidden = true;
       name.textContent = cfg.soldOutMessage;
+      name.className = "long";
     } else {
       chip.hidden = true; congrats.hidden = true; hint.hidden = false;
       name.textContent = "Sorry, something went wrong";
+      name.className = "";
       hint.textContent = "Please tap DONE and try again.";
     }
     popup.hidden = false;
