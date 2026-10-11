@@ -172,7 +172,7 @@ export default function SettingsPage() {
             type="button"
             className="self-start rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
             onClick={() => {
-              if (confirm("Reset all colours and texts to the defaults? (Not saved until you press Save.)")) setForm({ ...DEFAULT_SETTINGS, soundEnabled: form.soundEnabled, choirEnabled: form.choirEnabled, choirAudioUrl: form.choirAudioUrl, lowStockThreshold: form.lowStockThreshold });
+              if (confirm("Reset all colours and texts to the defaults? (Not saved until you press Save.)")) setForm({ ...DEFAULT_SETTINGS, soundEnabled: form.soundEnabled, choirEnabled: form.choirEnabled, choirAudioUrl: form.choirAudioUrl, lowStockThreshold: form.lowStockThreshold, allowTestReset: form.allowTestReset });
             }}
           >
             Restore default look
@@ -189,6 +189,16 @@ export default function SettingsPage() {
           <label className="text-sm text-slate-700">
             Choir audio file URL (optional — replaces the built-in choir)
             <input className={inputCls} value={form.choirAudioUrl ?? ""} onChange={(e) => set("choirAudioUrl", e.target.value || null)} placeholder="https://…/choir.mp3" />
+          </label>
+        </Card>
+
+        <Card title="Test tools">
+          <label className="flex items-start gap-2 text-sm text-slate-700">
+            <input type="checkbox" className="mt-1" checked={form.allowTestReset} onChange={(e) => set("allowTestReset", e.target.checked)} />
+            <span>
+              Show the <b>Reset test draws</b> tool on the Prizes page.
+              <span className="block text-xs text-red-600">Only for the TEST site. Keep this OFF on the live site — the tool deletes all draw records.</span>
+            </span>
           </label>
         </Card>
 

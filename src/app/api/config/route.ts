@@ -15,6 +15,6 @@ export async function GET() {
   if (error || !row) {
     return NextResponse.json({ error: "settings unavailable" }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
-  const s = settingsFromRow(row as DrawSettingsRow);
+  const s = { ...settingsFromRow(row as DrawSettingsRow), allowTestReset: false };
   return NextResponse.json({ settings: s, available: available === true }, { headers: { "Cache-Control": "no-store" } });
 }

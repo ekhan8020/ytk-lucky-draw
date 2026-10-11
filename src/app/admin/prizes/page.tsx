@@ -36,6 +36,8 @@ export default function PrizesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [lowOnly, setLowOnly] = useState(false);
+  const [allowReset, setAllowReset] = useState(false);
+  const [notice, setNotice] = useState("");
   const [bulkTier, setBulkTier] = useState("");
   const [bulkValue, setBulkValue] = useState("");
 
@@ -44,12 +46,17 @@ export default function PrizesPage() {
     const [p, st, se] = await Promise.all([
       supabase.from("draw_prizes").select("*").order("sort_order").order("created_at"),
       supabase.rpc("draw_prize_stats"),
-      supabase.from("draw_settings").select("low_stock_threshold").eq("id", 1).single(),
+      supabase.from("draw_settings").select("low_stock_threshold, allow_test_reset").eq("id", 1).single(),
     ]);
     setPrizes(((p.data ?? []) as PrizeRow[]).map(prizeFromRow));
     setStats(new Map(((st.data ?? []) as { prize_id: string; total: number; today: number }[]).map((r) => [r.prize_id, { total: Number(r.total), today: Number(r.today) }])));
-    if (se.data) setThreshold((se.data as { low_stock_threshold: number }).low_stock_threshold);
+    if (se.data) {
+      const row = se.data as { low_stock_threshold: number; allow_test_reset?: boolean | null };
+      setThreshold(row.low_stock_threshold);
+      setAllowReset(row.allow_test_reset === true);
+    }
     if (p.error) setError(p.error.message);
+    else if (st.error) setError("Could not load win counts: " + st.error.message);
     setLoading(false);
   }, []);
 
@@ -104,6 +111,17 @@ export default function PrizesPage() {
     setBulkValue("");
   }
 
+  async function resetTest() {
+    const typed = prompt("This puts the stock of every prize that was won back, and DELETES all draw records.\nIt cannot be undone.\n\nType RESET to continue:");
+    if (typed !== "RESET") return;
+    const { data, error: err } = await createClient().rpc("draw_reset_test");
+    if (err) return setError(err.message);
+    const d = data as { prizes_restored: number; records_deleted: number };
+    setError("");
+    setNotice(`Done: ${d.records_deleted} draw record(s) deleted, stock restored on ${d.prizes_restored} prize(s).`);
+    load();
+  }
+
   async function toggleActive(p: Prize) {
     const { error: err } = await createClient().from("draw_prizes").update({ active: !p.active }).eq("id", p.id);
     if (err) setError(err.message);
@@ -144,6 +162,17 @@ export default function PrizesPage() {
 
       {!anyLive && prizes.length > 0 && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">No prize can be won right now — customers will see the sold-out message.</p>}
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {notice && <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
+      {allowReset && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3">
+          <p className="text-sm text-red-800">
+            <b>Test tools:</b> put back the stock of everything that was won and delete all draw records, so you can test again from the original stock.
+          </p>
+          <button onClick={resetTest} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">
+            Reset test draws
+          </button>
+        </div>
+      )}
 
       {draft && (
         <div className="rounded-2xl border border-slate-300 bg-white p-4">

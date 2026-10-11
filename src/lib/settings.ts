@@ -26,6 +26,8 @@ export interface DrawSettings {
   choirEnabled: boolean;
   choirAudioUrl: string | null;
   lowStockThreshold: number;
+  // Shows the "reset test draws" tool on the Prizes page. Keep OFF on the live site.
+  allowTestReset: boolean;
 }
 
 export const DEFAULT_SETTINGS: DrawSettings = {
@@ -53,6 +55,7 @@ export const DEFAULT_SETTINGS: DrawSettings = {
   choirEnabled: true,
   choirAudioUrl: null,
   lowStockThreshold: 5,
+  allowTestReset: false,
 };
 
 export interface DrawSettingsRow {
@@ -80,6 +83,7 @@ export interface DrawSettingsRow {
   choir_enabled: boolean;
   choir_audio_url: string | null;
   low_stock_threshold: number;
+  allow_test_reset?: boolean | null;
 }
 
 export function settingsFromRow(r: DrawSettingsRow): DrawSettings {
@@ -108,6 +112,7 @@ export function settingsFromRow(r: DrawSettingsRow): DrawSettings {
     choirEnabled: r.choir_enabled,
     choirAudioUrl: r.choir_audio_url,
     lowStockThreshold: r.low_stock_threshold,
+    allowTestReset: r.allow_test_reset === true,
   };
 }
 
@@ -137,6 +142,7 @@ export function settingsToRow(s: DrawSettings): DrawSettingsRow {
     choir_enabled: s.choirEnabled,
     choir_audio_url: s.choirAudioUrl,
     low_stock_threshold: s.lowStockThreshold,
+    allow_test_reset: s.allowTestReset,
   };
 }
 
