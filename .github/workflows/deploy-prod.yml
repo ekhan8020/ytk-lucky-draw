@@ -1,0 +1,46 @@
+name: Deploy ytk-lucky-draw (production)
+
+# Manual only (Actions tab -> Run workflow). Deploys to
+# <YTK_DRAW_VPS_DEPLOY_PATH>-prod on port 3011 (draw.ytkholding.com).
+# The -prod folder needs its own .env.local with the PRODUCTION Supabase keys.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.YTK_DRAW_VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.YTK_DRAW_VPS_PORT }}" "${{ secrets.YTK_DRAW_VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync app files to VPS (production path)
+        run: |
+          rsync -az --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.env.local' \
+            --exclude 'tsconfig.tsbuildinfo' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.YTK_DRAW_VPS_PORT }}" \
+            ./ "${{ secrets.YTK_DRAW_VPS_USER }}@${{ secrets.YTK_DRAW_VPS_HOST }}:${{ secrets.YTK_DRAW_VPS_DEPLOY_PATH }}-prod/"
+
+      - name: Install, build, and restart on the VPS (production)
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${{ secrets.YTK_DRAW_VPS_PORT }}" "${{ secrets.YTK_DRAW_VPS_USER }}@${{ secrets.YTK_DRAW_VPS_HOST }}" '
+            set -e
+            cd "${{ secrets.YTK_DRAW_VPS_DEPLOY_PATH }}-prod"
+            test -f .env.local || { echo "Missing .env.local in $(pwd) — create it with production Supabase credentials before deploying." >&2; exit 1; }
+            npm ci
+            npm run build
+            pm2 delete ytk-lucky-draw-prod 2>/dev/null || true
+            pm2 start npm --name ytk-lucky-draw-prod -- start -- -p 3011
+            pm2 save
+          '

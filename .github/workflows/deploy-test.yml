@@ -1,0 +1,59 @@
+name: Deploy ytk-lucky-draw (test)
+
+# Pushes to master deploy to the TEST site (draw-test.ytkholding.com, port 3010)
+# on YTK's VPS: rsync the app, build there, restart under pm2 (user "deploy").
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   YTK_DRAW_VPS_HOST         187.53.136.173
+#   YTK_DRAW_VPS_PORT         22
+#   YTK_DRAW_VPS_USER         deploy
+#   YTK_DRAW_VPS_DEPLOY_PATH  /home/deploy/ytk-lucky-draw
+#   YTK_DRAW_VPS_SSH_KEY      private key (PEM/OpenSSH) whose public half is in
+#                             that user's ~/.ssh/authorized_keys
+#
+# The deploy path must already contain a working .env.local (see
+# .env.local.example); this workflow never touches it, so Supabase keys are
+# never stored in the repo or in Actions logs.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.YTK_DRAW_VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.YTK_DRAW_VPS_PORT }}" "${{ secrets.YTK_DRAW_VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync app files to VPS
+        run: |
+          rsync -az --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.env.local' \
+            --exclude 'tsconfig.tsbuildinfo' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.YTK_DRAW_VPS_PORT }}" \
+            ./ "${{ secrets.YTK_DRAW_VPS_USER }}@${{ secrets.YTK_DRAW_VPS_HOST }}:${{ secrets.YTK_DRAW_VPS_DEPLOY_PATH }}/"
+
+      - name: Install, build, and restart on the VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${{ secrets.YTK_DRAW_VPS_PORT }}" "${{ secrets.YTK_DRAW_VPS_USER }}@${{ secrets.YTK_DRAW_VPS_HOST }}" '
+            set -e
+            cd "${{ secrets.YTK_DRAW_VPS_DEPLOY_PATH }}"
+            test -f .env.local || { echo "Missing .env.local in $(pwd)" >&2; exit 1; }
+            npm ci
+            npm run build
+            pm2 delete ytk-lucky-draw 2>/dev/null || true
+            pm2 start npm --name ytk-lucky-draw -- start -- -p 3010
+            pm2 save
+          '
