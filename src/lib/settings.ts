@@ -6,7 +6,10 @@ export interface DrawSettings {
   titleLine1Color: string;
   titleLine2Color: string;
   description: string;
+  descriptionColor: string;
   buttonText: string;
+  buttonColor: string;
+  buttonTextColor: string;
   popupHint: string;
   soldOutMessage: string;
   bgColor1: string;
@@ -27,7 +30,10 @@ export const DEFAULT_SETTINGS: DrawSettings = {
   titleLine1Color: "#E14B4B",
   titleLine2Color: "#F5C242",
   description: "Spend RM100 or more in one bill to draw once",
+  descriptionColor: "#D8DBE3",
   buttonText: "TAP TO OPEN",
+  buttonColor: "#F5C242",
+  buttonTextColor: "#1E2430",
   popupHint: "Show this screen to the cashier",
   soldOutMessage: "All prizes have been given out. Thank you for your support!",
   bgColor1: "#141A26",
@@ -48,7 +54,10 @@ export interface DrawSettingsRow {
   title_line1_color: string;
   title_line2_color: string;
   description: string;
+  description_color?: string | null;
   button_text: string;
+  button_color?: string | null;
+  button_text_color?: string | null;
   popup_hint: string;
   sold_out_message: string;
   bg_color_1: string;
@@ -70,7 +79,10 @@ export function settingsFromRow(r: DrawSettingsRow): DrawSettings {
     titleLine1Color: r.title_line1_color,
     titleLine2Color: r.title_line2_color,
     description: r.description,
+    descriptionColor: r.description_color || DEFAULT_SETTINGS.descriptionColor,
     buttonText: r.button_text,
+    buttonColor: r.button_color || DEFAULT_SETTINGS.buttonColor,
+    buttonTextColor: r.button_text_color || DEFAULT_SETTINGS.buttonTextColor,
     popupHint: r.popup_hint,
     soldOutMessage: r.sold_out_message,
     bgColor1: r.bg_color_1,
@@ -93,7 +105,10 @@ export function settingsToRow(s: DrawSettings): DrawSettingsRow {
     title_line1_color: s.titleLine1Color,
     title_line2_color: s.titleLine2Color,
     description: s.description,
+    description_color: s.descriptionColor,
     button_text: s.buttonText,
+    button_color: s.buttonColor,
+    button_text_color: s.buttonTextColor,
     popup_hint: s.popupHint,
     sold_out_message: s.soldOutMessage,
     bg_color_1: s.bgColor1,
@@ -153,6 +168,13 @@ export function themeVars(s: DrawSettings): Record<string, string> {
     "--inner-a": shade(box, 0.9),
     "--inner-b": shade(box, 0.4),
     "--inner-c": shade(rib, 0.35),
+    "--desc": s.descriptionColor,
+    "--btn": s.buttonColor,
+    "--btn-light": shade(s.buttonColor, 0.4),
+    "--btn-mid": shade(s.buttonColor, -0.1),
+    "--btn-deep": shade(s.buttonColor, -0.3),
+    "--btn-rgb": rgbTriplet(s.buttonColor),
+    "--btn-text": s.buttonTextColor,
     "--ink": "#1e2430",
   };
 }

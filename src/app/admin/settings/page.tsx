@@ -72,7 +72,7 @@ export default function SettingsPage() {
   if (!form) return <p className="text-sm text-slate-500">Loading…</p>;
   const set = <K extends keyof DrawSettings>(k: K, v: DrawSettings[K]) => setForm({ ...form, [k]: v });
 
-  const colorsOk = [form.titleLine1Color, form.titleLine2Color, form.bgColor1, form.bgColor2, form.boxColor, form.ribbonColor, ...(form.bgColor3 ? [form.bgColor3] : [])].every(isHex);
+  const colorsOk = [form.titleLine1Color, form.titleLine2Color, form.descriptionColor, form.buttonColor, form.buttonTextColor, form.bgColor1, form.bgColor2, form.boxColor, form.ribbonColor, ...(form.bgColor3 ? [form.bgColor3] : [])].every(isHex);
   const dirty = JSON.stringify(form) !== JSON.stringify(saved);
 
   async function save() {
@@ -129,6 +129,7 @@ export default function SettingsPage() {
           </label>
           <ColorField label="Title line 1 colour" value={form.titleLine1Color} onChange={(v) => set("titleLine1Color", v)} />
           <ColorField label="Title line 2 colour" value={form.titleLine2Color} onChange={(v) => set("titleLine2Color", v)} />
+          <ColorField label="Description colour" value={form.descriptionColor} onChange={(v) => set("descriptionColor", v)} />
         </Card>
 
         <Card title="Colours">
@@ -145,7 +146,9 @@ export default function SettingsPage() {
           </label>
           <ColorField label="Gift box colour" value={form.boxColor} onChange={(v) => set("boxColor", v)} />
           <ColorField label="Ribbon / bow colour" value={form.ribbonColor} onChange={(v) => set("ribbonColor", v)} />
-          <p className="text-xs text-slate-500">Highlights, shadows and the glow are worked out from these two colours automatically.</p>
+          <ColorField label="Button colour" value={form.buttonColor} onChange={(v) => set("buttonColor", v)} />
+          <ColorField label="Button text colour" value={form.buttonTextColor} onChange={(v) => set("buttonTextColor", v)} />
+          <p className="text-xs text-slate-500">Highlights, shadows and the glow of the gift box are worked out from the box and ribbon colours automatically. The button has its own colours.</p>
           <button
             type="button"
             className="self-start rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
