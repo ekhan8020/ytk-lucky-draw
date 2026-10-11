@@ -161,6 +161,9 @@ export default function PrizesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-slate-900">Prizes</h1>
         <div className="flex gap-2">
+          <button onClick={deleteAll} disabled={prizes.length === 0} className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40">
+            Delete all
+          </button>
           <Link href="/admin/prizes/import" className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
             Import from file
           </Link>
@@ -176,16 +179,11 @@ export default function PrizesPage() {
       {allowReset && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3">
           <p className="text-sm text-red-800">
-            <b>Test tools:</b> <i>Reset test draws</i> puts back the stock of everything that was won and deletes all draw records, so you can test again from the original stock. <i>Delete all prizes</i> empties the prize list.
+            <b>Test tools:</b> put back the stock of everything that was won and delete all draw records, so you can test again from the original stock.
           </p>
-          <div className="flex gap-2">
-            <button onClick={resetTest} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">
-              Reset test draws
-            </button>
-            <button onClick={deleteAll} disabled={prizes.length === 0} className="rounded-lg border border-red-600 bg-white px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-40">
-              Delete all prizes
-            </button>
-          </div>
+          <button onClick={resetTest} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">
+            Reset test draws
+          </button>
         </div>
       )}
 
