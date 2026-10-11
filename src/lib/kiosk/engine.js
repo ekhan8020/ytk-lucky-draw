@@ -249,7 +249,7 @@ export function createKioskEngine(root, api) {
 
   /* ---------- Scene ---------- */
   var stage = $("#stage"), box = $("#box"), lid = $("#lid"), base = $("#base"), inner = $("#inner"),
-      halo = $("#halo"), beam = $("#beam"), rays = $("#rays"), flash = $("#flash"),
+      hole = $("#hole"), halo = $("#halo"), beam = $("#beam"), rays = $("#rays"), flash = $("#flash"),
       btn = $("#open"), popup = $("#popup"), card = $("#card");
 
   /* Keep every fill-forwards animation we start so reset can cancel them all (el.getAnimations() misses finished ones in some engines). */
@@ -307,6 +307,7 @@ export function createKioskEngine(root, api) {
 
     sfx.pop();
     var o = opening();
+    A(hole, [{ opacity: 0 }, { opacity: 1 }], { duration: 140, fill: "forwards" });
     A(lid, [
       { transform: "translate(0,0) rotate(0deg)" },
       { transform: "translate(-6px,-235px) rotate(-16deg)", offset: 0.7 },
@@ -378,7 +379,7 @@ export function createKioskEngine(root, api) {
   function resetScene() {
     live.forEach(function (a) { try { a.cancel(); } catch (e) {} });
     live = [];
-    [box, lid, base, inner, beam, halo, flash].forEach(function (el) { el.getAnimations().forEach(function (a) { a.cancel(); }); });
+    [box, lid, base, hole, inner, beam, halo, flash].forEach(function (el) { el.getAnimations().forEach(function (a) { a.cancel(); }); });
     rays.classList.remove("on");
     popup.hidden = true;
     stage.classList.remove("busy");

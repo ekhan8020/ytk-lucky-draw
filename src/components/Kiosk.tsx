@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createKioskEngine } from "@/lib/kiosk/engine";
+import { GiftBox } from "./GiftBox";
 import { DEFAULT_SETTINGS, DrawSettings, themeVars } from "@/lib/settings";
 import "@/app/kiosk.css";
 
@@ -161,52 +162,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
         <section className="stage-wrap">
           <div className="stage" id="stage">
             <div className="rays" id="rays" />
-            <svg viewBox="0 0 400 420" aria-hidden="true">
-              <defs>
-                <linearGradient id="gBody" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0" style={{ stopColor: "var(--box-a)" }} />
-                  <stop offset=".45" style={{ stopColor: "var(--box-b)" }} />
-                  <stop offset="1" style={{ stopColor: "var(--box-c)" }} />
-                </linearGradient>
-                <linearGradient id="gLid" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" style={{ stopColor: "var(--lid-a)" }} />
-                  <stop offset="1" style={{ stopColor: "var(--lid-b)" }} />
-                </linearGradient>
-                <linearGradient id="gRib" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0" style={{ stopColor: "var(--rib-a)" }} />
-                  <stop offset=".5" style={{ stopColor: "var(--rib-b)" }} />
-                  <stop offset="1" style={{ stopColor: "var(--rib-c)" }} />
-                </linearGradient>
-                <radialGradient id="gIn" cx=".5" cy=".5" r=".5">
-                  <stop offset="0" style={{ stopColor: "var(--inner-a)" }} />
-                  <stop offset=".55" style={{ stopColor: "var(--inner-b)" }} />
-                  <stop offset="1" style={{ stopColor: "var(--inner-c)" }} />
-                </radialGradient>
-                <radialGradient id="gShadow" cx=".5" cy=".5" r=".5">
-                  <stop offset="0" stopColor="#05070c" stopOpacity=".55" />
-                  <stop offset="1" stopColor="#05070c" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <ellipse cx="200" cy="374" rx="140" ry="17" fill="url(#gShadow)" />
-              <g id="box">
-                <g id="base">
-                  <ellipse cx="200" cy="215" rx="90" ry="22" fill="#2a1d1d" />
-                  <ellipse id="inner" cx="200" cy="215" rx="90" ry="22" fill="url(#gIn)" opacity="0" />
-                  <path d="M110 215 A90 22 0 0 0 290 215 L290 333 Q290 345 278 345 L122 345 Q110 345 110 333 Z" fill="url(#gBody)" />
-                  <path d="M188 237 Q200 238.5 212 237 L212 345 L188 345 Z" fill="url(#gRib)" />
-                  <path d="M110 215 A90 22 0 0 0 290 215" fill="none" style={{ stroke: "var(--box-rim)" }} strokeWidth="2" />
-                </g>
-                <g id="lid">
-                  <path d="M198 172 C168 112 112 126 138 162 C150 178 182 180 198 172 Z" fill="url(#gRib)" style={{ stroke: "var(--rib-stroke)" }} strokeWidth="2" />
-                  <path d="M202 172 C232 112 288 126 262 162 C250 178 218 180 202 172 Z" fill="url(#gRib)" style={{ stroke: "var(--rib-stroke)" }} strokeWidth="2" />
-                  <path d="M150 152 C158 140 172 140 184 160" fill="none" style={{ stroke: "var(--rib-hi)" }} strokeWidth="3" strokeLinecap="round" opacity=".8" />
-                  <rect x="96" y="176" width="208" height="44" rx="10" fill="url(#gLid)" />
-                  <rect x="96" y="208" width="208" height="12" rx="6" style={{ fill: "var(--box-shadow-edge)" }} />
-                  <rect x="188" y="176" width="24" height="44" fill="url(#gRib)" />
-                  <ellipse cx="200" cy="172" rx="15" ry="11" fill="url(#gRib)" style={{ stroke: "var(--rib-stroke)" }} strokeWidth="2" />
-                </g>
-              </g>
-            </svg>
+            <GiftBox />
             <div className="halo" id="halo" />
             <div className="beam" id="beam" />
           </div>
