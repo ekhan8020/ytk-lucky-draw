@@ -9,6 +9,7 @@ interface ResultRow {
   tier_label: string;
   kiosk_id: string | null;
   created_at: string;
+  voided_at: string | null;
 }
 
 const PAGE = 50;
@@ -31,7 +32,7 @@ export default function ResultsPage() {
   // Day boundaries are Malaysia time (UTC+8), whatever the browser's timezone.
   const query = useCallback(
     (supabase: ReturnType<typeof createClient>, head = false) => {
-      let q = supabase.from("draw_results").select("id, prize_name, tier_label, kiosk_id, created_at", head ? { count: "exact", head: true } : { count: "exact" });
+      let q = supabase.from("draw_results").select("id, prize_name, tier_label, kiosk_id, created_at, voided_at", head ? { count: "exact", head: true } : { count: "exact" });
       if (from) q = q.gte("created_at", `${from}T00:00:00+08:00`);
       if (to) q = q.lt("created_at", new Date(new Date(`${to}T00:00:00+08:00`).getTime() + 86400000).toISOString());
       if (prizeName) q = q.eq("prize_name", prizeName);
@@ -75,7 +76,7 @@ export default function ResultsPage() {
       if (!data || data.length < 1000) break;
     }
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const csv = ["Time (Malaysia),Prize,Tier,Kiosk", ...all.map((r) => [esc(fmt(r.created_at)), esc(r.prize_name), esc(r.tier_label), esc(r.kiosk_id ?? "")].join(","))].join("\n");
+    const csv = ["Time (Malaysia),Prize,Tier,Kiosk,Voided", ...all.map((r) => [esc(fmt(r.created_at)), esc(r.prize_name), esc(r.tier_label), esc(r.kiosk_id ?? ""), esc(r.voided_at ? "voided" : "")].join(","))].join("\n");
     const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -180,9 +181,12 @@ export default function ResultsPage() {
               </tr>
             )}
             {rows.map((r) => (
-              <tr key={r.id} className="border-t border-slate-100">
+              <tr key={r.id} className={`border-t border-slate-100 ${r.voided_at ? "text-slate-400 line-through" : ""}`}>
                 <td className="whitespace-nowrap px-3 py-2">{fmt(r.created_at)}</td>
-                <td className="px-3 py-2 font-medium text-slate-900">{r.prize_name}</td>
+                <td className="px-3 py-2 font-medium text-slate-900">
+                  {r.prize_name}
+                  {r.voided_at && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500 no-underline">voided</span>}
+                </td>
                 <td className="px-3 py-2">{r.tier_label}</td>
                 <td className="px-3 py-2 text-slate-500">{r.kiosk_id ?? ""}</td>
               </tr>

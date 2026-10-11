@@ -122,6 +122,15 @@ export default function PrizesPage() {
     load();
   }
 
+  async function undoWin(p: Prize) {
+    if (!confirm(`Undo the latest win of "${p.name}"?\nOne unit of stock goes back. The record stays in Results, marked as voided.`)) return;
+    const { error: err } = await createClient().rpc("draw_undo_win", { p_prize_id: p.id });
+    if (err) return setError(err.message);
+    setError("");
+    setNotice(`Undid one win of "${p.name}".`);
+    load();
+  }
+
   async function deleteAll() {
     const typed = prompt(`This DELETES ALL ${prizes.length} prizes. Past draw records keep the prize names.\nIt cannot be undone.\n\nType DELETE ALL to continue:`);
     if (typed !== "DELETE ALL") return;
@@ -310,6 +319,11 @@ export default function PrizesPage() {
                   <td className="px-3 py-2">
                     <b>{st?.total ?? 0}</b> / {p.stock === null ? "∞" : p.stock + (st?.total ?? 0)}
                     {(st?.today ?? 0) > 0 && <span className="ml-2 text-xs text-slate-500">today {st?.today}</span>}
+                    {(st?.total ?? 0) > 0 && (
+                      <button onClick={() => undoWin(p)} className="ml-2 rounded border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 hover:bg-slate-50" title="Undo the latest win (stock +1)">
+                        Undo 1
+                      </button>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     <input
