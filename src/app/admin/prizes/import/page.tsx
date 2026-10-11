@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { parseDelimited } from "@/lib/csv";
 import { ColorField } from "@/components/ColorField";
@@ -34,6 +34,7 @@ export default function ImportPrizesPage() {
   const [defaultColor, setDefaultColor] = useState("#E4E6EC");
   const [onExisting, setOnExisting] = useState<"update" | "skip">("update");
   const [existing, setExisting] = useState<Map<string, string>>(new Map());
+  const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
   const [result, setResult] = useState("");
@@ -160,8 +161,13 @@ export default function ImportPrizesPage() {
           In Excel: <b>File → Save As → CSV (UTF-8)</b>, then choose the file here. Or copy the rows <i>including the header row</i> from Excel and paste them below. Columns it understands:{" "}
           <b>Description</b> (name), <b>Total Bal. Qty</b> (stock), and optionally <b>Weight</b>, <b>Tier</b>, <b>Tier Color</b>. Other columns are ignored.
         </p>
-        <input type="file" accept=".csv,.txt,.tsv,text/csv" onChange={(e) => onFile(e.target.files?.[0])} className="mb-3 block text-sm" />
-        {fileName && <p className="mb-2 text-xs text-slate-500">File: {fileName}</p>}
+        <div className="mb-3 flex items-center gap-3">
+          <input ref={fileRef} type="file" accept=".csv,.txt,.tsv,text/csv" onChange={(e) => onFile(e.target.files?.[0])} className="hidden" />
+          <button type="button" onClick={() => fileRef.current?.click()} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50">
+            Choose file…
+          </button>
+          <span className="text-sm text-slate-500">{fileName || "No file chosen"}</span>
+        </div>
         <textarea
           value={text}
           onChange={(e) => {
@@ -178,7 +184,8 @@ export default function ImportPrizesPage() {
       {parsed && !parsed.error && (
         <>
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">2. Options</h2>
+            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">2. Options</h2>
+            <p className="mb-3 text-xs text-slate-500">Weight, tier tag and colour below are only used for rows where your file does not provide them. A stock cap, if set, applies to every row.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <p className="mb-1 text-sm font-medium text-slate-800">Weight (when the file has no Weight column)</p>
