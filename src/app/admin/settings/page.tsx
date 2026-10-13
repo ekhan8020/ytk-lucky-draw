@@ -172,7 +172,7 @@ export default function SettingsPage() {
             type="button"
             className="self-start rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
             onClick={() => {
-              if (confirm("Reset all colours and texts to the defaults? (Not saved until you press Save.)")) setForm({ ...DEFAULT_SETTINGS, soundEnabled: form.soundEnabled, choirEnabled: form.choirEnabled, choirAudioUrl: form.choirAudioUrl, lowStockThreshold: form.lowStockThreshold, allowTestReset: form.allowTestReset });
+              if (confirm("Reset all colours and texts to the defaults? (Not saved until you press Save.)")) setForm({ ...DEFAULT_SETTINGS, soundEnabled: form.soundEnabled, choirEnabled: form.choirEnabled, choirAudioUrl: form.choirAudioUrl, lowStockThreshold: form.lowStockThreshold, minAmount: form.minAmount, allowTestReset: form.allowTestReset });
             }}
           >
             Restore default look
@@ -200,6 +200,14 @@ export default function SettingsPage() {
               <span className="block text-xs text-red-600">Only for the TEST site. Keep this OFF on the live site — the tool deletes all draw records.</span>
             </span>
           </label>
+        </Card>
+
+        <Card title="Draw requirement">
+          <label className="text-sm text-slate-700">
+            A bill must be above this amount (RM) to draw
+            <input type="number" min={0} className={inputCls} value={form.minAmount} onChange={(e) => set("minAmount", Math.max(0, Number(e.target.value) || 0))} />
+          </label>
+          <p className="text-xs text-slate-500">Customers must also enter an order number (CX- and 6 digits) before they can tap the box. Both are saved with the draw result.</p>
         </Card>
 
         <Card title="Stock warning">

@@ -23,6 +23,12 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<DrawSettings>(DEFAULT_SETTINGS);
   const [available, setAvailable] = useState(true);
+  // Order number (6 digits after the fixed CX-) and bill amount: both needed before the box can be opened.
+  const [orderNo, setOrderNo] = useState("");
+  const [amount, setAmount] = useState("");
+  const [tried, setTried] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+  const entryRef = useRef({ orderNo: "", amount: "" });
   const settingsRef = useRef(settings);
   const availableRef = useRef(true);
   // Admin "test mode": settings and the next prize arrive by postMessage; nothing is fetched, no stock is touched, nothing is recorded.
@@ -31,6 +37,10 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  useEffect(() => {
+    entryRef.current = { orderNo, amount };
+  }, [orderNo, amount]);
 
   const refreshConfig = useCallback(async () => {
     if (preview) return;
@@ -111,13 +121,14 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
         return { kind: "prize", prize: p.prize ?? { name: "Sample Prize", tier: "LUCKY GIFT", color: "#E4E6EC" } };
       }
       const token = engine!.newToken();
+      const entry = entryRef.current;
       // Same token on every retry: the server returns the same result and takes stock once.
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const res = await fetch("/api/draw", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ token, orderNo: entry.orderNo, amount: Number(entry.amount) }),
           });
           const data = await res.json().catch(() => null);
           if (res.ok && data?.status === "ok") return { kind: "prize", prize: data.prize };
@@ -136,13 +147,41 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
       isAvailable: () => availableRef.current,
       requestPrize,
       onIdle: () => {
+        // back to standby: next customer starts with empty fields
+        setOrderNo("");
+        setAmount("");
+        setTried(false);
+        setDrawing(false);
         refreshConfig();
       },
     }) as Engine;
-    return () => engine?.destroy();
+
+    // Block the tap on the box until the order number and amount are valid. Runs in the
+    // capture phase so the engine's own click handler on the button never sees a blocked tap.
+    const gate = (e: Event) => {
+      if (!(e.target instanceof Element) || !e.target.closest("#open")) return;
+      const { orderNo: o, amount: a } = entryRef.current;
+      const ok = /^[0-9]{6}$/.test(o) && Number(a) > settingsRef.current.minAmount;
+      if (!ok) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        setTried(true);
+        return;
+      }
+      setDrawing(true);
+    };
+    root.addEventListener("click", gate, true);
+    return () => {
+      root.removeEventListener("click", gate, true);
+      engine?.destroy();
+    };
   }, [refreshConfig, preview]);
 
   const style = themeVars(settings) as CSSProperties;
+  const orderOk = /^[0-9]{6}$/.test(orderNo);
+  const amountNum = Number(amount);
+  const amountOk = amount !== "" && amountNum > settings.minAmount;
+  const ready = orderOk && amountOk;
 
   return (
     <div className="kiosk" ref={rootRef} style={style} onContextMenu={(e) => e.preventDefault()}>
@@ -169,7 +208,48 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
         </section>
 
         <footer className="foot">
-          <button className="cta" id="open" type="button" style={available ? undefined : { display: "none" }}>
+          {available && (
+            <div className="entry">
+              <label className={`field${tried && !orderOk ? " bad" : ""}`}>
+                <span className="lbl">Order No.</span>
+                <span className="box">
+                  <span className="pre">CX-</span>
+                  <input
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="123456"
+                    value={orderNo}
+                    disabled={drawing}
+                    onChange={(e) => setOrderNo(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  />
+                </span>
+              </label>
+              <label className={`field${tried && !amountOk ? " bad" : ""}`}>
+                <span className="lbl">Amount</span>
+                <span className="box">
+                  <span className="pre">RM</span>
+                  <input
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="890"
+                    value={amount}
+                    disabled={drawing}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9.]/g, "");
+                      const [int, ...rest] = v.split(".");
+                      setAmount(rest.length ? `${int}.${rest.join("").slice(0, 2)}` : int);
+                    }}
+                  />
+                </span>
+              </label>
+              {tried && !ready && (
+                <p className="entry-msg" role="alert">
+                  {!orderOk ? "Enter the 6-digit order number." : `Amount must be above RM ${settings.minAmount}.`}
+                </p>
+              )}
+            </div>
+          )}
+          <button className={`cta${ready ? "" : " locked"}`} id="open" type="button" style={available ? undefined : { display: "none" }}>
             <b>{settings.buttonText}</b>
           </button>
           {!available && <p className="rule soldout">{settings.soldOutMessage}</p>}

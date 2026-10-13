@@ -8,6 +8,8 @@ interface ResultRow {
   prize_name: string;
   tier_label: string;
   kiosk_id: string | null;
+  order_no: string | null;
+  amount: number | string | null;
   created_at: string;
   voided_at: string | null;
 }
@@ -32,7 +34,7 @@ export default function ResultsPage() {
   // Day boundaries are Malaysia time (UTC+8), whatever the browser's timezone.
   const query = useCallback(
     (supabase: ReturnType<typeof createClient>, head = false) => {
-      let q = supabase.from("draw_results").select("id, prize_name, tier_label, kiosk_id, created_at, voided_at", head ? { count: "exact", head: true } : { count: "exact" });
+      let q = supabase.from("draw_results").select("id, prize_name, tier_label, kiosk_id, order_no, amount, created_at, voided_at", head ? { count: "exact", head: true } : { count: "exact" });
       if (from) q = q.gte("created_at", `${from}T00:00:00+08:00`);
       if (to) q = q.lt("created_at", new Date(new Date(`${to}T00:00:00+08:00`).getTime() + 86400000).toISOString());
       if (prizeName) q = q.eq("prize_name", prizeName);
@@ -76,7 +78,7 @@ export default function ResultsPage() {
       if (!data || data.length < 1000) break;
     }
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const csv = ["Time (Malaysia),Prize,Tier,Kiosk,Voided", ...all.map((r) => [esc(fmt(r.created_at)), esc(r.prize_name), esc(r.tier_label), esc(r.kiosk_id ?? ""), esc(r.voided_at ? "voided" : "")].join(","))].join("\n");
+    const csv = ["Time (Malaysia),Order No,Amount (RM),Prize,Tier,Kiosk,Voided", ...all.map((r) => [esc(fmt(r.created_at)), esc(r.order_no ?? ""), esc(r.amount == null ? "" : Number(r.amount).toFixed(2)), esc(r.prize_name), esc(r.tier_label), esc(r.kiosk_id ?? ""), esc(r.voided_at ? "voided" : "")].join(","))].join("\n");
     const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
@@ -163,10 +165,12 @@ export default function ResultsPage() {
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-        <table className="w-full min-w-[560px] text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
               <th className="px-3 py-2">Time (Malaysia)</th>
+              <th className="px-3 py-2">Order No</th>
+              <th className="px-3 py-2 text-right">Amount (RM)</th>
               <th className="px-3 py-2">Prize</th>
               <th className="px-3 py-2">Tier</th>
               <th className="px-3 py-2">Kiosk</th>
@@ -175,7 +179,7 @@ export default function ResultsPage() {
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-slate-500">
+                <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
                   {busy ? "Loading…" : "No draws match."}
                 </td>
               </tr>
@@ -183,6 +187,8 @@ export default function ResultsPage() {
             {rows.map((r) => (
               <tr key={r.id} className={`border-t border-slate-100 ${r.voided_at ? "text-slate-400 line-through" : ""}`}>
                 <td className="whitespace-nowrap px-3 py-2">{fmt(r.created_at)}</td>
+                <td className="whitespace-nowrap px-3 py-2">{r.order_no ?? ""}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-right">{r.amount == null ? "" : Number(r.amount).toFixed(2)}</td>
                 <td className="px-3 py-2 font-medium text-slate-900">
                   {r.prize_name}
                   {r.voided_at && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500 no-underline">voided</span>}

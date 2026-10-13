@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
   if (limited(ip)) return NextResponse.json({ status: "error", error: "Too many requests" }, { status: 429 });
 
-  let body: { token?: unknown; kiosk?: unknown } = {};
+  let body: { token?: unknown; kiosk?: unknown; orderNo?: unknown; amount?: unknown } = {};
   try {
     body = await request.json();
   } catch {
@@ -38,10 +38,16 @@ export async function POST(request: NextRequest) {
   }
   const token = typeof body.token === "string" ? body.token : "";
   if (!UUID.test(token)) return NextResponse.json({ status: "error", error: "Invalid token" }, { status: 400 });
+  // Order number: the 6 digits after the fixed CX- prefix. Amount: a plain number in RM.
+  const digits = typeof body.orderNo === "string" ? body.orderNo : "";
+  const amount = typeof body.amount === "number" ? body.amount : typeof body.amount === "string" ? Number(body.amount) : NaN;
+  if (!/^[0-9]{6}$/.test(digits) || !Number.isFinite(amount) || amount <= 0 || amount > 10_000_000) {
+    return NextResponse.json({ status: "error", error: "Order number and amount are required" }, { status: 400 });
+  }
   const kiosk = typeof body.kiosk === "string" ? body.kiosk.slice(0, 40) : null;
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase.rpc("draw_pick_prize", { p_token: token, p_kiosk: kiosk });
+  const { data, error } = await supabase.rpc("draw_pick_prize", { p_token: token, p_kiosk: kiosk, p_order_no: `CX-${digits}`, p_amount: Math.round(amount * 100) / 100 });
   if (error || !data) {
     console.error("draw_pick_prize failed", error?.message);
     return NextResponse.json({ status: "error", error: "Draw failed" }, { status: 500 });
@@ -50,6 +56,7 @@ export async function POST(request: NextRequest) {
   if (r.status === "ok") {
     return NextResponse.json({ status: "ok", prize: { name: r.name, tier: r.tier, color: r.color } });
   }
+  if (r.status === "invalid") return NextResponse.json({ status: "error", error: "Order number or amount not accepted" }, { status: 400 });
   if (r.status === "sold_out") return NextResponse.json({ status: "sold_out" });
   return NextResponse.json({ status: "error", error: "Busy, try again" }, { status: 503 });
 }
