@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
   const token = typeof body.token === "string" ? body.token : "";
   if (!UUID.test(token)) return NextResponse.json({ status: "error", error: "Invalid token" }, { status: 400 });
-  // Order number: the 6 digits after the fixed CX- prefix. Amount: a plain number in RM.
+  // Order number: the 6 digits after the fixed CS- prefix. Amount: a plain number in RM.
   const digits = typeof body.orderNo === "string" ? body.orderNo : "";
   const amount = typeof body.amount === "number" ? body.amount : typeof body.amount === "string" ? Number(body.amount) : NaN;
   if (!/^[0-9]{6}$/.test(digits) || !Number.isFinite(amount) || amount <= 0 || amount > 10_000_000) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   const kiosk = typeof body.kiosk === "string" ? body.kiosk.slice(0, 40) : null;
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase.rpc("draw_pick_prize", { p_token: token, p_kiosk: kiosk, p_order_no: `CX-${digits}`, p_amount: Math.round(amount * 100) / 100 });
+  const { data, error } = await supabase.rpc("draw_pick_prize", { p_token: token, p_kiosk: kiosk, p_order_no: `CS-${digits}`, p_amount: Math.round(amount * 100) / 100 });
   if (error || !data) {
     console.error("draw_pick_prize failed", error?.message);
     return NextResponse.json({ status: "error", error: "Draw failed" }, { status: 500 });

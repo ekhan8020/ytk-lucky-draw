@@ -23,7 +23,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [settings, setSettings] = useState<DrawSettings>(DEFAULT_SETTINGS);
   const [available, setAvailable] = useState(true);
-  // Order number (6 digits after the fixed CX-) and bill amount: both needed before the box can be opened.
+  // Order number (6 digits after the fixed CS-) and bill amount: both needed before the box can be opened.
   const [orderNo, setOrderNo] = useState("");
   const [amount, setAmount] = useState("");
   const [tried, setTried] = useState(false);
@@ -170,7 +170,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
         return;
       }
       const { orderNo: o, amount: a } = entryRef.current;
-      const ok = /^[0-9]{6}$/.test(o) && Number(a) > settingsRef.current.minAmount;
+      const ok = /^[0-9]{6}$/.test(o) && Number(a) >= settingsRef.current.minAmount;
       e.stopImmediatePropagation();
       e.preventDefault();
       if (!ok) {
@@ -211,7 +211,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
   const style = themeVars(settings) as CSSProperties;
   const orderOk = /^[0-9]{6}$/.test(orderNo);
   const amountNum = Number(amount);
-  const amountOk = amount !== "" && amountNum > settings.minAmount;
+  const amountOk = amount !== "" && amountNum >= settings.minAmount;
   const ready = orderOk && amountOk;
 
   return (
@@ -244,7 +244,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
               <label className={`field${(tried && !orderOk) || used ? " bad" : ""}`}>
                 <span className="lbl">Order No.</span>
                 <span className="box">
-                  <span className="pre">CX-</span>
+                  <span className="pre">CS-</span>
                   <input
                     inputMode="numeric"
                     autoComplete="off"
@@ -283,7 +283,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
               )}
               {!used && tried && !ready && (
                 <p className="entry-msg" role="alert">
-                  {!orderOk ? "Enter the 6-digit order number." : `Amount must be above RM ${settings.minAmount}.`}
+                  {!orderOk ? "Enter the 6-digit order number." : `Amount must be at least RM ${settings.minAmount}.`}
                 </p>
               )}
             </div>

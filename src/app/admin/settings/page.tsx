@@ -117,7 +117,7 @@ export default function SettingsPage() {
             Description
             <input className={inputCls} value={form.description} onChange={(e) => set("description", e.target.value)} />
             <span className="mt-1 block text-xs text-slate-500">
-              Write <b>{"{amount}"}</b> where the minimum bill amount should appear — it follows the amount set in &ldquo;Draw requirement&rdquo; below. Example: <i>Spend over RM{"{amount}"} in one bill to draw once</i> →{" "}
+              Write <b>{"{amount}"}</b> where the minimum bill amount should appear — it follows the amount set in &ldquo;Draw requirement&rdquo; below. Example: <i>Spend RM{"{amount}"} or more in one bill to draw once</i> →{" "}
               <b>{renderDescription(form)}</b>
             </span>
           </label>
@@ -208,10 +208,10 @@ export default function SettingsPage() {
 
         <Card title="Draw requirement">
           <label className="text-sm text-slate-700">
-            A bill must be above this amount (RM) to draw
+            Minimum bill amount (RM) to draw — this amount and above can draw
             <input type="number" min={0} className={inputCls} value={form.minAmount} onChange={(e) => set("minAmount", Math.max(0, Number(e.target.value) || 0))} />
           </label>
-          <p className="text-xs text-slate-500">Customers must also enter an order number (CX- and 6 digits) before they can tap the box. Both are saved with the draw result.</p>
+          <p className="text-xs text-slate-500">Customers must also enter an order number (CS- and 6 digits) before they can tap the box. Both are saved with the draw result.</p>
         </Card>
 
         <Card title="Stock warning">

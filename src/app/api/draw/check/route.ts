@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const digits = request.nextUrl.searchParams.get("orderNo") ?? "";
   if (!/^[0-9]{6}$/.test(digits)) return NextResponse.json({ error: "Invalid order number" }, { status: 400 });
 
-  const { data, error } = await createAdminClient().from("draw_results").select("id").eq("order_no", `CX-${digits}`).is("voided_at", null).limit(1);
+  const { data, error } = await createAdminClient().from("draw_results").select("id").eq("order_no", `CS-${digits}`).is("voided_at", null).limit(1);
   if (error) return NextResponse.json({ error: "Check failed" }, { status: 500 });
   return NextResponse.json({ used: (data ?? []).length > 0 });
 }

@@ -26,7 +26,7 @@ export interface DrawSettings {
   choirEnabled: boolean;
   choirAudioUrl: string | null;
   lowStockThreshold: number;
-  // A draw needs a bill above this amount (RM).
+  // A draw needs a bill of at least this amount (RM).
   minAmount: number;
   // Shows the "reset test draws" tool on the Prizes page. Keep OFF on the live site.
   allowTestReset: boolean;
@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS: DrawSettings = {
   titleLine2: "LUCKY DRAW",
   titleLine1Color: "#E14B4B",
   titleLine2Color: "#F5C242",
-  description: "Spend over RM{amount} in one bill to draw once",
+  description: "Spend RM{amount} or more in one bill to draw once",
   descriptionColor: "#D8DBE3",
   buttonText: "TAP TO OPEN",
   buttonColor: "#F5C242",
@@ -62,7 +62,7 @@ export const DEFAULT_SETTINGS: DrawSettings = {
 };
 
 // The description may contain {amount}; it is replaced by the current minimum bill amount
-// (e.g. "Spend over RM{amount} in one bill" -> "Spend over RM800 in one bill").
+// (e.g. "Spend RM{amount} or more in one bill" -> "Spend RM800 or more in one bill").
 export function renderDescription(s: Pick<DrawSettings, "description" | "minAmount">): string {
   const amount = s.minAmount.toLocaleString("en-MY", { maximumFractionDigits: 2 });
   return s.description.replace(/\{amount\}/gi, amount);
