@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
   if (r.status === "ok") {
     return NextResponse.json({ status: "ok", prize: { name: r.name, tier: r.tier, color: r.color } });
   }
+  if (r.status === "duplicate") return NextResponse.json({ status: "duplicate" }, { status: 409 });
   if (r.status === "invalid") return NextResponse.json({ status: "error", error: "Order number or amount not accepted" }, { status: 400 });
   if (r.status === "sold_out") return NextResponse.json({ status: "sold_out" });
   return NextResponse.json({ status: "error", error: "Busy, try again" }, { status: 503 });

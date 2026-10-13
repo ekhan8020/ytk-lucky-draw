@@ -28,6 +28,8 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
   const [amount, setAmount] = useState("");
   const [tried, setTried] = useState(false);
   const [drawing, setDrawing] = useState(false);
+  const [used, setUsed] = useState(false);
+  const passRef = useRef(false);
   const entryRef = useRef({ orderNo: "", amount: "" });
   const settingsRef = useRef(settings);
   const availableRef = useRef(true);
@@ -151,6 +153,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
         setOrderNo("");
         setAmount("");
         setTried(false);
+        setUsed(false);
         setDrawing(false);
         refreshConfig();
       },
@@ -158,17 +161,45 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
 
     // Block the tap on the box until the order number and amount are valid. Runs in the
     // capture phase so the engine's own click handler on the button never sees a blocked tap.
+    // The box itself can be tapped too, so both the button and the box are gated.
     const gate = (e: Event) => {
-      if (!(e.target instanceof Element) || !e.target.closest("#open")) return;
+      if (!(e.target instanceof Element) || !e.target.closest("#open, #stage")) return;
+      if (passRef.current) {
+        passRef.current = false; // the re-sent tap after a successful check
+        setDrawing(true);
+        return;
+      }
       const { orderNo: o, amount: a } = entryRef.current;
       const ok = /^[0-9]{6}$/.test(o) && Number(a) > settingsRef.current.minAmount;
+      e.stopImmediatePropagation();
+      e.preventDefault();
       if (!ok) {
-        e.stopImmediatePropagation();
-        e.preventDefault();
         setTried(true);
         return;
       }
+      if (preview) {
+        passRef.current = true;
+        (root.querySelector("#open") as HTMLButtonElement | null)?.click();
+        return;
+      }
+      // Is this order number already used? Ask before any animation starts.
       setDrawing(true);
+      fetch(`/api/draw/check?orderNo=${o}`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { used?: boolean } | null) => {
+          if (d?.used) {
+            setUsed(true);
+            setDrawing(false);
+            return;
+          }
+          passRef.current = true;
+          (root.querySelector("#open") as HTMLButtonElement | null)?.click();
+        })
+        .catch(() => {
+          // offline: let the draw go ahead — the server refuses a used number anyway
+          passRef.current = true;
+          (root.querySelector("#open") as HTMLButtonElement | null)?.click();
+        });
     };
     root.addEventListener("click", gate, true);
     return () => {
@@ -210,7 +241,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
         <footer className="foot">
           {available && (
             <div className="entry">
-              <label className={`field${tried && !orderOk ? " bad" : ""}`}>
+              <label className={`field${(tried && !orderOk) || used ? " bad" : ""}`}>
                 <span className="lbl">Order No.</span>
                 <span className="box">
                   <span className="pre">CX-</span>
@@ -220,7 +251,10 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
                     placeholder="123456"
                     value={orderNo}
                     disabled={drawing}
-                    onChange={(e) => setOrderNo(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onChange={(e) => {
+                      setOrderNo(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setUsed(false);
+                    }}
                   />
                 </span>
               </label>
@@ -242,7 +276,12 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
                   />
                 </span>
               </label>
-              {tried && !ready && (
+              {used && (
+                <p className="entry-msg" role="alert">
+                  This order number has already been used for a draw.
+                </p>
+              )}
+              {!used && tried && !ready && (
                 <p className="entry-msg" role="alert">
                   {!orderOk ? "Enter the 6-digit order number." : `Amount must be above RM ${settings.minAmount}.`}
                 </p>
