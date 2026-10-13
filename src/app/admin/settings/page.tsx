@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ColorField, OptionalColorField } from "@/components/ColorField";
 import { shade } from "@/lib/color";
 import { isHex } from "@/lib/color";
-import { DEFAULT_SETTINGS, DrawSettings, DrawSettingsRow, settingsFromRow, settingsToRow } from "@/lib/settings";
+import { DEFAULT_SETTINGS, DrawSettings, DrawSettingsRow, renderDescription, settingsFromRow, settingsToRow } from "@/lib/settings";
 import { Prize, PrizeRow, prizeFromRow } from "@/lib/prizes";
 
 const DEVICES = [
@@ -116,6 +116,10 @@ export default function SettingsPage() {
           <label className="text-sm text-slate-700">
             Description
             <input className={inputCls} value={form.description} onChange={(e) => set("description", e.target.value)} />
+            <span className="mt-1 block text-xs text-slate-500">
+              Write <b>{"{amount}"}</b> where the minimum bill amount should appear — it follows the amount set in &ldquo;Draw requirement&rdquo; below. Example: <i>Spend over RM{"{amount}"} in one bill to draw once</i> →{" "}
+              <b>{renderDescription(form)}</b>
+            </span>
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm text-slate-700">

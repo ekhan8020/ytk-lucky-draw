@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createKioskEngine } from "@/lib/kiosk/engine";
 import { GiftBox } from "./GiftBox";
-import { DEFAULT_SETTINGS, DrawSettings, themeVars } from "@/lib/settings";
+import { DEFAULT_SETTINGS, DrawSettings, renderDescription, themeVars } from "@/lib/settings";
 import "@/app/kiosk.css";
 
 type PrizeResult = { kind: "prize"; prize: { name: string; tier: string; color: string } } | { kind: "sold_out" } | { kind: "error" };
@@ -226,7 +226,7 @@ export function Kiosk({ preview = false }: { preview?: boolean }) {
             <span className="y">{settings.titleLine1}</span>
             <span className="l">{settings.titleLine2}</span>
           </h1>
-          <p className="rule">{settings.description}</p>
+          <p className="rule">{renderDescription(settings)}</p>
         </header>
 
         <section className="stage-wrap">

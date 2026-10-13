@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS: DrawSettings = {
   titleLine2: "LUCKY DRAW",
   titleLine1Color: "#E14B4B",
   titleLine2Color: "#F5C242",
-  description: "Spend RM100 or more in one bill to draw once",
+  description: "Spend over RM{amount} in one bill to draw once",
   descriptionColor: "#D8DBE3",
   buttonText: "TAP TO OPEN",
   buttonColor: "#F5C242",
@@ -60,6 +60,13 @@ export const DEFAULT_SETTINGS: DrawSettings = {
   minAmount: 800,
   allowTestReset: false,
 };
+
+// The description may contain {amount}; it is replaced by the current minimum bill amount
+// (e.g. "Spend over RM{amount} in one bill" -> "Spend over RM800 in one bill").
+export function renderDescription(s: Pick<DrawSettings, "description" | "minAmount">): string {
+  const amount = s.minAmount.toLocaleString("en-MY", { maximumFractionDigits: 2 });
+  return s.description.replace(/\{amount\}/gi, amount);
+}
 
 export interface DrawSettingsRow {
   title_line1: string;
