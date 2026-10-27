@@ -70,3 +70,6 @@ On production, 0003–0010 were run as one combined script (same final result as
 - `NEXT_PUBLIC_*` values are baked in at build time: after changing the env file, **redeploy**.
 - The production folder must be `/home/deploy/ytk-lucky-draw-prod` (owned by `deploy`), not `/root/...`.
 - Never paste the service-role / secret key in chat or commit it.
+
+## Branding (Oct 2026)
+Official YTK logo is used for the favicon and the home-screen app icons (`public/icon-*.png`, `src/app/icon.png`, `apple-icon.png`, `favicon.ico`; manifest lists them). The kiosk pages themselves show no logo.
